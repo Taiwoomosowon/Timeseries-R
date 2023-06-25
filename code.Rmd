@@ -1,0 +1,215 @@
+
+The optimal approach for this task would be to follow a systematic and structured process to develop a multiple regression model to predict the compressive strength of concrete. This process can be broken down into the following steps:
+
+Data cleaning and preparation: This involves checking for missing values, outliers, and data consistency issues. It may also involve transforming the data to ensure it meets the assumptions of the regression model.
+
+Exploratory data analysis: This involves visualizing the data and identifying patterns and relationships between the independent variables and the dependent variable.
+
+Feature selection: This involves selecting the most relevant independent variables that have a significant impact on the dependent variable.
+
+Model building: This involves building a multiple regression model using the selected independent variables and the dependent variable.
+
+Model evaluation: This involves evaluating the performance of the regression model using various statistical measures such as R-squared, adjusted R-squared, mean squared error, and root mean squared error.
+
+Model refinement: This involves refining the model by adding or removing independent variables, transforming the data, or using different modeling techniques.
+```{r}
+# install packages
+# install.packages("readxl")
+# install.packages("patchwork")
+# install.packages("cowplot")
+
+```
+
+```{r}
+
+library(readxl)
+library(patchwork)
+library(cowplot)
+```
+
+```{r}
+# load data
+data <- read_excel("data.xlsx")
+```
+
+```{r}
+# check data
+head(data)
+```
+
+```{r}
+# x=check for missing values
+sum(is.na(data))
+
+```
+
+
+```{r}
+# chceck duolicate data
+sum(duplicated(data))
+
+```
+
+
+```{r}
+# unique duolicate records
+data <- unique(data)
+
+```
+
+
+
+```{r}
+str(data)
+
+```
+
+
+```{r}
+summary(data)
+
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+plots <- list()
+
+for(col in colnames(data)) {
+  plot_title <- paste("Distribution of", col)
+  x_axis_title <- col
+  if (col == "Concrete compressive strength(MPa, megapascals)") {
+    x_axis_title <- "Concrete compressive strength (MPa)"
+  }
+  plot <- ggplot(data, aes(x = .data[[col]])) +
+    geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+    labs(title = plot_title,
+         x = x_axis_title,
+         y = "Count") +
+    theme(plot.title = element_text(size = 10),
+          axis.title.x = element_text(size = 10),
+          axis.title.y = element_text(size = 10),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"))
+  plots[[col]] <- plot
+}
+
+combined_plot <- wrap_plots(plots, ncol = 3)
+combined_plot + theme(plot.background = element_rect(fill = "white"), 
+                      plot.title = element_text(size = 6, face = "bold"))
+
+
+
+
+```
+
+Lets explore the correlation between the variables
+
+```{r}
+library(ggplot2)
+
+
+# Create a correlation matrix
+corr <- round(cor(data), 2)
+
+# Convert the correlation matrix to a dataframe
+corr_df <- as.data.frame(as.table(corr))
+tail(corr_df, 9)
+
+
+```
+
+
+
+
+```{r}
+# Rename the columns
+names(corr_df) <- c("variable1", "variable2", "correlation")
+
+# Create a heatmap with numbers
+ggplot(corr_df, aes(variable1, variable2, fill = correlation)) +
+  geom_tile() +
+  geom_text(aes(label = round(correlation, 2)), color = "black") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+
+Cement, Age, and Superplasticizer has the highest positive correlation with concrete comprehensive strength.
+Water and Fine Aggregate has the highest negative correlation with the concrete comprehensive strength.
+
+```{r}
+
+# Create a scatter plot between x and y
+plot(data$'Concrete compressive strength', data$'Cement', xlab = "Concrete compressive strength", ylab = "Cement", main = "Concrete compressive strength vs Cement")
+
+```
+```{r}
+# Create a scatter plot between x and y
+plot(data$'Concrete compressive strength', data$'Superplasticizer', xlab = "Concrete compressive strength", ylab = "Cement", main = "Concrete compressive strength vs Superplasticizer")
+
+```
+
+```{r}
+# Create a scatter plot between x and y
+plot(data$'Concrete compressive strength', data$'Age', xlab = "Concrete compressive strength", ylab = "Cement", main = "Concrete compressive strength vs Age")
+```
+
+
+```{r}
+# Create a scatter plot between x and y
+plot(data$'Concrete compressive strength', data$'Water', xlab = "Concrete compressive strength", ylab = "Cement", main = "Concrete compressive strength vs Water")
+```
+
+```{r}
+# Create a scatter plot between x and y
+plot(data$'Concrete compressive strength', data$'Fine aggregate', xlab = "Concrete compressive strength", ylab = "Cement", main = "Concrete compressive strength vs Fine aggregate")
+
+```
+
+
+
+
+
+```{r}
+ggplot(data, aes( y = `Concrete compressive strength`)) +
+  geom_boxplot() +
+  labs(y = "Concrete compressive strength(MPa, megapascals)")
+
+
+```
+
+
+
+```{r}
+ggplot(data, aes(x = 'Cement', y = `Concrete compressive strength`)) +
+  geom_violin() +
+  labs(x = "Cement (component 1)(kg in a m^3 mixture)", y = "Concrete compressive strength(MPa, megapascals)")
+
+```
+
+
+```{r}
+
+
+# Fit a linear regression model
+model <- lm(`Concrete compressive strength` ~ Cement + Slag + Ash + Water + Superplasticizer + `Coarse Aggregate` + `Fine Aggregate` + Age, data = data)
+
+# Print the summary of the model
+summary(model)
+
+```
+
+p - vakue for Coarse Aggregate, Fine Aggregate > 0.5
+This means that at 95% confidence we can reject the null hypotheses and Coarse Aggregate, Fine Aggregate are insignificant.
+
